@@ -1,22 +1,16 @@
 import cv2
 import subprocess
 import threading
-from pytube import YouTube
 
 class LocalLivestream:
-    def __init__(self, stream_key='your_stream_key', output_url='rtmp://localhost/live'):
+    def __init__(self, stream_key='test', output_url='rtmp://localhost/live'):
         self.stream_key = stream_key
         self.output_url = output_url
-        self.current_url = None
+        self.current_path = None
         self.process = None
         self.capture = None
         self.is_streaming = False
         self.lock = threading.Lock()
-
-    def get_stream_url(self, youtube_url):
-        yt = YouTube(youtube_url)
-        stream = yt.streams.filter(progressive=False, file_extension='mp4').order_by('resolution').desc().first()
-        return stream.url
 
     def start_stream(self):
         self.is_streaming = True
@@ -25,11 +19,10 @@ class LocalLivestream:
     def _capture_stream(self):
         while self.is_streaming:
             with self.lock:
-                if self.current_url:
-                    stream_url = self.get_stream_url(self.current_url)
-                    self.capture = cv2.VideoCapture(stream_url)
+                if self.current_path:
+                    self.capture = cv2.VideoCapture(self.current_path)
                     if not self.capture.isOpened():
-                        print(f"Error: Could not open video stream for URL {self.current_url}.")
+                        print(f"Error: Could not open video file {self.current_path}.")
                         self.is_streaming = False
                         return
 
@@ -67,9 +60,9 @@ class LocalLivestream:
         if self.capture and self.capture.isOpened():
             self.capture.release()
 
-    def switch_stream(self, new_url):
+    def switch_stream(self, new_path):
         with self.lock:
-            self.current_url = new_url
+            self.current_path = new_path
             if self.capture:
                 self.capture.release()
             if self.process:

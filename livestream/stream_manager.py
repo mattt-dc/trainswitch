@@ -6,17 +6,17 @@ class StreamManager:
         self.livestream = livestream
 
     def stream_decision_thread(self):
-        # This is a placeholder for the logic that decides which stream to use
-        youtube_urls = [
-            'YOUR_FIRST_YOUTUBE_LIVESTREAM_URL',
-            'YOUR_SECOND_YOUTUBE_LIVESTREAM_URL',
-            # Add more URLs as needed
+        # List of local video file paths
+        video_paths = [
+            'path_to_first_video.mp4',
+            'path_to_second_video.mp4',
+            # Add more paths as needed
         ]
 
-        for url in youtube_urls:
-            self.livestream.switch_stream(url)
-            print(f"Switched to {url}")
-            time.sleep(10)  # Stream each URL for 10 seconds
+        for path in video_paths:
+            self.livestream.switch_stream(path)
+            print(f"Switched to {path}")
+            time.sleep(10)  # Stream each video for 10 seconds
 
     def start(self):
         threading.Thread(target=self.stream_decision_thread).start()
