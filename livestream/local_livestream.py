@@ -3,7 +3,7 @@ import subprocess
 import threading
 
 class LocalLivestream:
-    def __init__(self, stream_key='test', output_url='rtmp://localhost/live'):
+    def __init__(self, stream_key='test', output_url='rtmp://localhost/liveout'):
         self.stream_key = stream_key
         self.output_url = output_url
         self.current_path = None

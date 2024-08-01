@@ -8,8 +8,8 @@ class StreamManager:
     def stream_decision_thread(self):
         # List of local video file paths
         video_paths = [
-            'path_to_first_video.mp4',
-            'path_to_second_video.mp4',
+            'rtmp://localhost/live',
+            'rtmp://localhost/live2',
             # Add more paths as needed
         ]
 
