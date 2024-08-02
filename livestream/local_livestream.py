@@ -1,9 +1,10 @@
 import cv2
 import subprocess
 import threading
+import time
 
 class LocalLivestream:
-    def __init__(self, stream_key='test', output_url='rtmp://localhost/liveout'):
+    def __init__(self, stream_key='test', output_url='rtmp://localhost:1935'):
         self.stream_key = stream_key
         self.output_url = output_url
         self.current_path = None
@@ -21,6 +22,7 @@ class LocalLivestream:
             with self.lock:
                 if self.current_path:
                     self.capture = cv2.VideoCapture(self.current_path)
+                    time.sleep(1)
                     if not self.capture.isOpened():
                         print(f"Error: Could not open video file {self.current_path}.")
                         self.is_streaming = False
