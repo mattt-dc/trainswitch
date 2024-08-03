@@ -4,7 +4,7 @@ import threading
 import time
 
 class LocalLivestream:
-    def __init__(self, stream_key='test', output_url='rtmp://localhost:1935'):
+    def __init__(self, stream_key='test', output_url='rtmp://localhost:1936'):
         self.stream_key = stream_key
         self.output_url = output_url
         self.current_path = None
@@ -20,9 +20,11 @@ class LocalLivestream:
     def _capture_stream(self):
         while self.is_streaming:
             with self.lock:
+                initial_path = self.current_path
                 if self.current_path:
                     self.capture = cv2.VideoCapture(self.current_path)
-                    time.sleep(1)
+                    time.sleep(3)
+                    print("sleeping")
                     if not self.capture.isOpened():
                         print(f"Error: Could not open video file {self.current_path}.")
                         self.is_streaming = False
@@ -42,15 +44,20 @@ class LocalLivestream:
                         '-f', 'flv',
                         f'{self.output_url}/{self.stream_key}'
                     ]
-
+                    print("processing")
                     self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
 
                     while self.is_streaming and self.capture.isOpened():
+                        if self.current_path != initial_path:
+                            print("Stream path has changed. Restarting stream...")
+                            break
+
                         ret, frame = self.capture.read()
                         if not ret:
                             break
                         self.process.stdin.write(frame.tobytes())
 
+                    print("releasing")
                     self.capture.release()
                     self.process.stdin.close()
                     self.process.wait()
@@ -63,7 +70,10 @@ class LocalLivestream:
             self.capture.release()
 
     def switch_stream(self, new_path):
+        print(f"Switching stream to {new_path}...")
+        self.current_path = new_path
         with self.lock:
+            print("Setting current path...")
             self.current_path = new_path
             if self.capture:
                 self.capture.release()
