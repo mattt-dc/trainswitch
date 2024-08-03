@@ -19,7 +19,7 @@ class StreamManager:
             print(f"Switching to {path}...")
             self.livestream.switch_stream(path)
             print(f"Switched to {path}")
-            time.sleep(60)  # Stream each video for 10 seconds
+            time.sleep(60)
 
     def start(self):
         threading.Thread(target=self.stream_decision_thread).start()

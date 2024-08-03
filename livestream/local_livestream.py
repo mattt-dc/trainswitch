@@ -8,6 +8,7 @@ class LocalLivestream:
         self.stream_key = stream_key
         self.output_url = output_url
         self.current_path = None
+        self.previous_path = None
         self.process = None
         self.capture = None
         self.is_streaming = False
@@ -18,49 +19,49 @@ class LocalLivestream:
         threading.Thread(target=self._capture_stream).start()
 
     def _capture_stream(self):
+        self.initialize_ffmpeg_process()
+
         while self.is_streaming:
             with self.lock:
-                initial_path = self.current_path
                 if self.current_path:
-                    self.capture = cv2.VideoCapture(self.current_path)
-                    time.sleep(3)
-                    print("sleeping")
-                    if not self.capture.isOpened():
-                        print(f"Error: Could not open video file {self.current_path}.")
-                        self.is_streaming = False
-                        return
-
-                    command = [
-                        'ffmpeg',
-                        '-y',
-                        '-f', 'rawvideo',
-                        '-pix_fmt', 'bgr24',
-                        '-s', f"{int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))}",
-                        '-r', str(self.capture.get(cv2.CAP_PROP_FPS)),
-                        '-i', '-',
-                        '-c:v', 'libx264',
-                        '-pix_fmt', 'yuv420p',
-                        '-preset', 'veryfast',
-                        '-f', 'flv',
-                        f'{self.output_url}/{self.stream_key}'
-                    ]
-                    print("processing")
-                    self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
+                    self.switch_video_source(self.current_path)
 
                     while self.is_streaming and self.capture.isOpened():
-                        if self.current_path != initial_path:
-                            print("Stream path has changed. Restarting stream...")
-                            break
+                        if self.current_path_has_changed():
+                            self.switch_video_source(self.current_path)
+                            continue
 
                         ret, frame = self.capture.read()
                         if not ret:
                             break
                         self.process.stdin.write(frame.tobytes())
 
-                    print("releasing")
-                    self.capture.release()
-                    self.process.stdin.close()
-                    self.process.wait()
+    def initialize_ffmpeg_process(self):
+        command = [
+            'ffmpeg',
+            '-y',
+            '-f', 'rawvideo',
+            '-pix_fmt', 'bgr24',
+            '-s', "1280x720",
+            '-r', "30",
+            '-i', '-',
+            '-c:v', 'libx264',
+            '-pix_fmt', 'yuv420p',
+            '-preset', 'veryfast',
+            '-f', 'flv',
+            f'{self.output_url}/{self.stream_key}'
+        ]
+        self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
+
+    def switch_video_source(self, new_path):
+        self.previous_path = self.current_path
+        if self.capture:
+            self.capture.release()
+        self.capture = cv2.VideoCapture(new_path)
+        self.current_path = new_path
+
+    def current_path_has_changed(self):
+        return self.current_path != self.previous_path
 
     def stop_stream(self):
         self.is_streaming = False
