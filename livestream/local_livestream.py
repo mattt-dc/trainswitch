@@ -16,7 +16,9 @@ class LocalLivestream:
 
     def start_stream(self):
         self.is_streaming = True
+        print(f"Current active threads bf: {len(threading.enumerate())}")
         threading.Thread(target=self._capture_stream).start()
+        print(f"Current active threads af: {len(threading.enumerate())}")
 
     def _capture_stream(self):
         self.initialize_ffmpeg_process()
@@ -34,7 +36,13 @@ class LocalLivestream:
                         ret, frame = self.capture.read()
                         if not ret:
                             break
-                        self.process.stdin.write(frame.tobytes())
+                        try:
+                            self.process.stdin.write(frame.tobytes())
+                        except Exception as e:
+                            print(f"Error writing frame to ffmpeg process: {e}")
+                            time.sleep(1)
+                            # break
+                        # print(f"Current active threads: {len(threading.enumerate())}")
 
     def initialize_ffmpeg_process(self):
         command = [
@@ -54,6 +62,7 @@ class LocalLivestream:
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
 
     def switch_video_source(self, new_path):
+        print(f"Switching video source to {new_path}...")
         self.previous_path = self.current_path
         if self.capture:
             self.capture.release()
