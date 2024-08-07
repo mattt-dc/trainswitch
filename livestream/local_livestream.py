@@ -62,6 +62,10 @@ class LocalLivestream:
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
 
     def switch_video_source(self, new_path):
+        if self.current_path == new_path and self.capture is not None:
+            print(f"Video source is already {new_path}")
+            time.sleep(10)
+            return
         print(f"Switching video source to {new_path}...")
         self.previous_path = self.current_path
         if self.capture:

@@ -17,7 +17,8 @@ class StreamManager:
         self.model.conf = 0.25
         self.model.iou = 0.45
         self.model.show = False
-        self.model.save = True
+        self.model.save = False
+        self.model.torchyolo = True
 
     def switch_stream_in_thread(self, path):
         threading.Thread(target=self.livestream.switch_stream, args=(path,)).start()
@@ -42,6 +43,8 @@ class StreamManager:
 
         while True:
             for path in video_paths:
+                if path == self.livestream.current_path:
+                    continue
                 cap = cv2.VideoCapture(path)
                 success, frame = cap.read()
                 if success:
@@ -54,7 +57,8 @@ class StreamManager:
                     pred = self.model.predict("data/images/temp_frame.jpg", 640)
                     # Assuming 'pred' contains information to decide if a train is detected
                     # You might need to adjust the condition based on your prediction result structure
-                    if "train" in pred:
+                    predValue = pred[2][0].item()
+                    if pred[2][0].item() == 6.0:
                         print(f"Train detected in {path}. Switching...")
                         self.livestream.switch_stream(path)
                         time.sleep(10)
