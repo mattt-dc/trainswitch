@@ -81,6 +81,7 @@ class LocalLivestream:
         self.previous_path = self.current_path
         if self.capture:
             self.capture.release()
+            time.sleep(1)
         self.capture = cv2.VideoCapture(new_path)
         self.current_path = new_path
 

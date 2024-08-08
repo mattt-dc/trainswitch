@@ -62,7 +62,7 @@ class StreamManager:
                             print(f"Train detected in {path}. Switching...")
                             # self.livestream.switch_stream(path)
                             self.livestream.switch_video_source(path)
-                            time.sleep(10)
+                            time.sleep(30)
                             break
                     except Exception as e:
                         print(f"Error predicting: {e}")
