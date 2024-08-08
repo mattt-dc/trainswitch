@@ -21,7 +21,7 @@ class StreamManager:
         self.model.torchyolo = True
 
     def switch_stream_in_thread(self, path):
-        threading.Thread(target=self.livestream.switch_stream, args=(path,)).start()
+        threading.Thread(target=self.livestream.start_stream, args=(path,)).start()
 
     def stream_decision_thread(self):
         print("Starting stream decision thread...")
@@ -33,15 +33,18 @@ class StreamManager:
         ]
         if self.livestream.current_path == None:
             print("Switching to the first stream in the list...")
-            time.sleep(30)
+            time.sleep(5)
             print(f"Current active threads: {len(threading.enumerate())}")
             self.switch_stream_in_thread(video_paths[0])
             print("Switched stream")
-            time.sleep(60)
+            time.sleep(5)
 
         # self.livestream.switch_stream(video_paths[1])
 
         while True:
+            if not self.livestream.is_ready:
+                time.sleep(1)
+                continue
             for path in video_paths:
                 if path == self.livestream.current_path:
                     continue
@@ -57,7 +60,8 @@ class StreamManager:
                         predValue = pred[2][0].item()
                         if predValue == 6.0:
                             print(f"Train detected in {path}. Switching...")
-                            self.livestream.switch_stream(path)
+                            # self.livestream.switch_stream(path)
+                            self.livestream.switch_video_source(path)
                             time.sleep(10)
                             break
                     except Exception as e:

@@ -12,37 +12,41 @@ class LocalLivestream:
         self.process = None
         self.capture = None
         self.is_streaming = False
+        self.is_ready = False
         self.lock = threading.Lock()
 
-    def start_stream(self):
+    def start_stream(self, path):
         self.is_streaming = True
         print(f"Current active threads bf: {len(threading.enumerate())}")
-        threading.Thread(target=self._capture_stream).start()
+        # threading.Thread(target=self._capture_stream, args=(path,)).start()
+        self._capture_stream(path)
         print(f"Current active threads af: {len(threading.enumerate())}")
 
-    def _capture_stream(self):
+    def _capture_stream(self, first_path):
         self.initialize_ffmpeg_process()
+        self.current_path = first_path
         error_count = 0
-
+        while not self.capture or not self.capture.isOpened():
+            # keep trying to open the video source
+            self.switch_video_source(self.current_path)
+            time.sleep(30)
         while self.is_streaming:
             with self.lock:
                 if self.current_path:
-                    self.switch_video_source(self.current_path)
-
                     while self.is_streaming and self.capture.isOpened():
+                        self.is_ready = True
                         if error_count > 10:
                             print("Too many errors. Restarting stream...")
                             self.stop_stream()
                             self.start_stream()
                             break
-                        if self.current_path_has_changed():
-                            self.switch_video_source(self.current_path)
-                            continue
-
-                        ret, frame = self.capture.read()
-                        if not ret:
-                            break
+                        # if self.current_path_has_changed():
+                        #     self.switch_video_source(self.current_path)
+                        #     continue
                         try:
+                            ret, frame = self.capture.read()
+                            if not ret:
+                                break
                             self.process.stdin.write(frame.tobytes())
                         except Exception as e:
                             print(f"Error writing frame to ffmpeg process: {e}")
@@ -69,7 +73,7 @@ class LocalLivestream:
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
 
     def switch_video_source(self, new_path):
-        if self.current_path == new_path and self.capture is not None:
+        if self.current_path == new_path and self.capture is not None and self.capture.isOpened():
             print(f"Video source is already {new_path}")
             time.sleep(10)
             return
