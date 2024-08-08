@@ -22,6 +22,7 @@ class LocalLivestream:
 
     def _capture_stream(self):
         self.initialize_ffmpeg_process()
+        error_count = 0
 
         while self.is_streaming:
             with self.lock:
@@ -29,6 +30,11 @@ class LocalLivestream:
                     self.switch_video_source(self.current_path)
 
                     while self.is_streaming and self.capture.isOpened():
+                        if error_count > 10:
+                            print("Too many errors. Restarting stream...")
+                            self.stop_stream()
+                            self.start_stream()
+                            break
                         if self.current_path_has_changed():
                             self.switch_video_source(self.current_path)
                             continue
@@ -41,8 +47,9 @@ class LocalLivestream:
                         except Exception as e:
                             print(f"Error writing frame to ffmpeg process: {e}")
                             time.sleep(1)
+                            error_count += 1
                             # break
-                        # print(f"Current active threads: {len(threading.enumerate())}")
+                        error_count = 0
 
     def initialize_ffmpeg_process(self):
         command = [

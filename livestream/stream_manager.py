@@ -33,11 +33,11 @@ class StreamManager:
         ]
         if self.livestream.current_path == None:
             print("Switching to the first stream in the list...")
-            time.sleep(5)
+            time.sleep(30)
             print(f"Current active threads: {len(threading.enumerate())}")
             self.switch_stream_in_thread(video_paths[0])
             print("Switched stream")
-            time.sleep(30)
+            time.sleep(60)
 
         # self.livestream.switch_stream(video_paths[1])
 
@@ -48,22 +48,20 @@ class StreamManager:
                 cap = cv2.VideoCapture(path)
                 success, frame = cap.read()
                 if success:
-                    # Save frame to a temporary file
                     temp_image_path = "data/images/temp_frame.jpg"
                     cv2.imwrite(temp_image_path, frame)
                     
-                    # Predict using the saved image
-                    print("Predicting...")
-                    pred = self.model.predict("data/images/temp_frame.jpg", 640)
-                    # Assuming 'pred' contains information to decide if a train is detected
-                    # You might need to adjust the condition based on your prediction result structure
-                    predValue = pred[2][0].item()
-                    if pred[2][0].item() == 6.0:
-                        print(f"Train detected in {path}. Switching...")
-                        self.livestream.switch_stream(path)
-                        time.sleep(10)
-                        # Break the loop to switch to the detected stream
-                        break
+                    try:
+                        print("Predicting...")
+                        pred = self.model.predict("data/images/temp_frame.jpg", 640)
+                        predValue = pred[2][0].item()
+                        if predValue == 6.0:
+                            print(f"Train detected in {path}. Switching...")
+                            self.livestream.switch_stream(path)
+                            time.sleep(10)
+                            break
+                    except Exception as e:
+                        print(f"Error predicting: {e}")
                 else:
                     print(f"Failed to read from {path}")
                 cap.release()
