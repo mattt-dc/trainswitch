@@ -6,9 +6,6 @@ from livestream.stream_manager import StreamManager
 def main():
     livestream = LocalLivestream()
 
-    # Start the thread to capture the current stream
-    livestream.start_stream()
-
     # Create and start the stream manager
     manager = StreamManager(livestream)
     manager.start()
